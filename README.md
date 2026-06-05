@@ -1,0 +1,1 @@
+A collection of HTML-based projects and web pages created with the assistance of AI tools. This repository showcases experiments, prototypes, and practical applications developed using AI-assisted workflows.
