@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>이름 추첨 프로그램</title>
+
+<style>
+body {
+    font-family: 'Segoe UI', sans-serif;
+    text-align: center;
+    background: linear-gradient(135deg, #ffd6e7, #ffeaf4);
+    margin: 0;
+    padding: 20px;
+}
+
+.card {
+    background: white;
+    border-radius: 20px;
+    padding: 15px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+textarea {
+    width: 90%;
+    height: 100px;
+    border-radius: 15px;
+    border: 2px solid #ff9ecb;
+    padding: 10px;
+    outline: none;
+}
+
+button {
+    padding: 10px 15px;
+    margin: 5px;
+    border: none;
+    border-radius: 20px;
+    background: #ff7eb9;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    background: #ff4fa3;
+    transform: scale(1.05);
+}
+
+select {
+    padding: 8px;
+    border-radius: 10px;
+    border: 2px solid #ff9ecb;
+}
+
+.container {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+    gap: 10px;
+}
+
+.list-box {
+    width: 30%;
+}
+
+.highlight {
+    font-size: 32px;
+    margin-top: 20px;
+    height: 40px;
+    font-weight: bold;
+}
+
+.flash {
+    animation: flash 0.5s infinite alternate;
+}
+
+@keyframes flash {
+    from { opacity: 1; }
+    to { opacity: 0.3; }
+}
+
+#countdown {
+    font-size: 30px;
+    color: #ff4fa3;
+    margin-top: 10px;
+}
+
+h1 {
+    color: #ff4fa3;
+}
+</style>
+</head>
+
+<body>
+
+<h1>💗 이름 추첨 프로그램 💗</h1>
+
+<div class="card">
+<textarea id="nameInput" placeholder="이름 입력 또는 Excel 복사"></textarea><br>
+
+<select id="countSelect">
+    <option value="1">1명</option>
+    <option value="2">2명</option>
+    <option value="3">3명</option>
+</select>
+
+<br>
+
+<button onclick="startDraw()">🎯 추첨 시작</button>
+<button onclick="redraw()">🔄 재추첨</button>
+<button onclick="resetAll()">♻ 전체 초기화</button>
+<button onclick="resetEmpty()">🗑 빈 초기화</button>
+
+<div class="highlight" id="result"></div>
+<div id="countdown"></div>
+</div>
+
+<div class="container">
+    <div class="card list-box">
+        <h3>🎀 추첨 대상</h3>
+        <ul id="candidateList"></ul>
+    </div>
+
+    <div class="card list-box">
+        <h3>🏆 당첨자</h3>
+        <ul id="winnerList"></ul>
+    </div>
+
+    <div class="card list-box">
+        <h3>📊 추첨 이력</h3>
+        <ul id="historyList"></ul>
+    </div>
+</div>
+
+<div style="margin-top:20px; color:#888;">
+    박지민(건반22)
+</div>
+
+<script>
+let candidates = [];
+let winners = [];
+let originalList = [];
+let round = 1;
+
+function updateLists() {
+    const cList = document.getElementById("candidateList");
+    const wList = document.getElementById("winnerList");
+
+    cList.innerHTML = "";
+    wList.innerHTML = "";
+
+    candidates.forEach(n => {
+        let li = document.createElement("li");
+        li.textContent = n;
+        cList.appendChild(li);
+    });
+
+    winners.forEach(n => {
+        let li = document.createElement("li");
+        li.textContent = n;
+
+        li.onclick = () => {
+            candidates.push(n);
+            winners = winners.filter(x => x !== n);
+            updateLists();
+        };
+
+        wList.appendChild(li);
+    });
+}
+
+function updateHistory(text) {
+    const hList = document.getElementById("historyList");
+    let li = document.createElement("li");
+    li.textContent = text;
+    hList.appendChild(li);
+}
+
+function loadNames() {
+    let input = document.getElementById("nameInput").value;
+    candidates = input.split(/\s+/).filter(x => x);
+    originalList = [...candidates];
+    winners = [];
+    updateLists();
+}
+
+function startDraw() {
+    if (candidates.length === 0) loadNames();
+    if (candidates.length === 0) return;
+
+    let count = 3;
+    const cd = document.getElementById("countdown");
+
+    cd.textContent = count;
+
+    let timer = setInterval(() => {
+        count--;
+        cd.textContent = count;
+
+        if (count === 0) {
+            clearInterval(timer);
+            cd.textContent = "";
+            runDraw();
+        }
+    }, 1000);
+}
+
+function runDraw() {
+    let resultDiv = document.getElementById("result");
+    let count = parseInt(document.getElementById("countSelect").value);
+
+    let interval = setInterval(() => {
+        resultDiv.textContent =
+            candidates[Math.floor(Math.random() * candidates.length)];
+    }, 100);
+
+    setTimeout(() => {
+        clearInterval(interval);
+
+        let selected = [];
+
+        for (let i = 0; i < count && candidates.length > 0; i++) {
+            let idx = Math.floor(Math.random() * candidates.length);
+            selected.push(candidates[idx]);
+            winners.push(candidates[idx]);
+            candidates.splice(idx, 1);
+        }
+
+        resultDiv.textContent = "🎉 " + selected.join(", ");
+        resultDiv.style.color = "#ff4fa3";
+        resultDiv.classList.add("flash");
+
+        let audio = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
+        audio.play();
+
+        updateHistory(round + "회차: " + selected.join(", "));
+        round++;
+
+        setTimeout(() => {
+            resultDiv.classList.remove("flash");
+        }, 2000);
+
+        updateLists();
+    }, 2000);
+}
+
+function redraw() {
+    startDraw();
+}
+
+function resetAll() {
+    candidates = [...originalList];
+    winners = [];
+    document.getElementById("result").textContent = "";
+    updateLists();
+}
+
+function resetEmpty() {
+    candidates = [];
+    winners = [];
+    originalList = [];
+    round = 1;
+
+    document.getElementById("nameInput").value = "";
+    document.getElementById("result").textContent = "";
+    document.getElementById("historyList").innerHTML = "";
+
+    updateLists();
+}
+</script>
+
+</body>
+</html>
